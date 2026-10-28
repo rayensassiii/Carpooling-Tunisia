@@ -19,33 +19,29 @@ A JavaFX desktop application that connects drivers and passengers across Tunisia
 
 ## 🚀 Getting Started
 
-### 1. Requirements
+### Requirements
 
-Install the following:
+- [JDK](https://jdk.java.net/)
+- [JavaFX SDK](https://openjfx.io/)
+- [Git](https://git-scm.com/)
 
-- [JDK](https://jdk.java.net/) — Java Development Kit
-- [JavaFX SDK](https://openjfx.io/) — JavaFX libraries
-- [Git](https://git-scm.com/) — To clone the repository
-
-Verify that Java is installed:
+Verify your Java installation:
 
 ```powershell
 java -version
 javac -version
 ```
 
-### 2. Download the Project
-
-Clone the repository:
+### 1. Clone the Repository
 
 ```powershell
-git clone https://github.com/rayensassi100-ship-it/Carpooling-Tunisia.git
+git clone https://github.com/rayensassiii/Carpooling-Tunisia.git
 cd Carpooling-Tunisia
 ```
 
-### 3. Configure JavaFX
+### 2. Configure JavaFX
 
-Download and extract the JavaFX SDK.
+Download and extract the [JavaFX SDK](https://openjfx.io/).
 
 Find the path to its `lib` directory. For example:
 
@@ -53,51 +49,46 @@ Find the path to its `lib` directory. For example:
 C:\Program Files\javafx-sdk-26\lib
 ```
 
-Replace this example path in the commands below with your actual JavaFX `lib` directory.
+Replace this example path in the commands below with your actual JavaFX SDK path.
 
-### 4. Compile the Application
-
-From the project root, enter the source directory:
+### 3. Compile the Application
 
 ```powershell
 cd src
-```
-
-Compile the Java files:
-
-```powershell
 javac --module-path "C:\Program Files\javafx-sdk-26\lib" --add-modules javafx.controls -d . com\carpool\*.java
 ```
 
-### 5. Run the Application
+### 4. Run the Application
 
 ```powershell
 java --module-path "C:\Program Files\javafx-sdk-26\lib" --add-modules javafx.controls -cp . com.carpool.CarpoolApp
 ```
 
-**Note:** These commands assume that the source files are located in `src/com/carpool/`, that the main class is `CarpoolApp`, and that the application only requires the `javafx.controls` module. Additional JavaFX modules or dependencies may be necessary depending on the implementation.
+**Note:** These commands assume that the source files are in `src/com/carpool/`, the main class is `CarpoolApp`, and the application requires only `javafx.controls`. Additional dependencies may be needed.
 
-## 🧪 Testing the Application
+## 🧪 Testing
 
-Launch the application and register a new account if registration is available.
+Launch the application and register an account if registration is available.
 
-If demo accounts are provided, use the credentials documented by the project maintainer. Do not use personal credentials.
+If demo accounts are configured, use the credentials provided by the project maintainer.
 
-**Database:** Check the project configuration for the SQLite database location. If the database is not included in the repository, follow the database setup instructions before launching the application.
+If the SQLite database is not included in the repository, initialize it according to the project configuration.
 
 ## 🔒 Security
 
-- Never commit real passwords, private credentials, or personal data.
-- Use test accounts when demonstrating the application.
-- Store passwords securely using an appropriate password-hashing method.
+- Never commit real passwords or private credentials.
+- Use test accounts for demonstrations.
+- Store passwords securely using an appropriate hashing method.
 
 ## 🎯 Project Goal
 
-Promote accessible and affordable travel between Tunisian cities through a simple digital carpooling platform.
+Promote accessible and affordable travel between Tunisian cities through a digital carpooling platform.
 
 ## 👨‍💻 Author
 
 **Rayen Sassi**
+
+- GitHub: [@rayensassiii](https://github.com/rayensassiii)
 
 ---
 
