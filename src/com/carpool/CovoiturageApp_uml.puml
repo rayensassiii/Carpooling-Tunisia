@@ -1,0 +1,602 @@
+@startuml CarPooling_Platform_UML
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+title Carpooling Platform - Updated UML Class Diagram
+
+' ============================================
+' MODEL - ENUMS
+' ============================================
+
+package "model.enums" {
+    enum UserStatus {
+        ACTIVE
+        SUSPENDED
+        BLOCKED
+        +getDisplayName(): String
+    }
+
+    enum TripStatus {
+        OPEN
+        FULL
+        IN_PROGRESS
+        COMPLETED
+        CANCELLED
+        +getDisplayName(): String
+    }
+
+    enum ReservationStatus {
+        PENDING
+        CONFIRMED
+        CANCELLED
+        COMPLETED
+        +getDisplayName(): String
+    }
+
+    enum PaymentStatus {
+        AUTHORIZED
+        CAPTURED
+        REFUNDED
+        PARTIAL_REFUND
+        FAILED
+        +getDisplayName(): String
+    }
+
+    enum NotificationType {
+        EMAIL
+        SMS
+        BOTH
+        +getDisplayName(): String
+    }
+
+    enum VehicleType {
+        SEDAN
+        SUV
+        MINIVAN
+        COUPE
+        HATCHBACK
+        PICKUP
+        +getDisplayName(): String
+        +getTypicalSeats(): int
+    }
+}
+
+' ============================================
+' MODEL - INTERFACES
+' ============================================
+
+package "model.interfaces" {
+    interface Notifiable {
+        +receiveNotification(notification: Notification): void
+    }
+
+    interface Authenticable {
+        +authenticate(password: String): boolean
+        +logout(): void
+    }
+
+    interface Refundable {
+        +calculateRefund(hoursBeforeDeparture: long): double
+    }
+}
+
+' ============================================
+' MODEL - DOMAIN CLASSES
+' ============================================
+
+package "model" {
+    abstract class User implements Notifiable, Authenticable {
+        -id: String
+        -email: String
+        -password: String
+        -firstName: String
+        -lastName: String
+        -phoneNumber: String
+        -status: UserStatus
+        -failedLoginAttempts: int
+        -createdAt: LocalDateTime
+        -lastLoginAt: LocalDateTime
+        -loggedIn: boolean
+        -notifications: List<Notification>
+        --
+        +createAccount(): void
+        +updateAccount(firstName, lastName, phoneNumber): void
+        +suspendAccount(): void
+        +activateAccount(): void
+        +blockUser(): void
+        +authenticate(password): boolean
+        +logout(): void
+        +incrementFailedAttempts(): void
+        +resetFailedAttempts(): void
+        +receiveNotification(notification): void
+        +getUnreadNotifications(): List<Notification>
+        +getUnreadCount(): int
+        +{abstract} getRole(): String
+    }
+
+    class Passenger extends User {
+        -reservations: List<Reservation>
+        -paymentMethods: List<PaymentMethod>
+        --
+        +addReservation(reservation): void
+        +removeReservation(reservation): void
+        +getActiveReservations(): List<Reservation>
+        +addPaymentMethod(method): void
+        +restorePaymentMethod(method): void
+        +setDefaultPaymentMethod(method): void
+        +getDefaultPaymentMethod(): PaymentMethod
+        +getTotalSpent(): double
+        +getRole(): String
+    }
+
+    class Driver extends Passenger {
+        -licenseNumber: String
+        -vehicles: List<Vehicle>
+        -trips: List<Trip>
+        -ratings: List<Rating>
+        -verified: boolean
+        --
+        +addVehicle(vehicle): void
+        +removeVehicle(vehicle): void
+        +addTrip(trip): void
+        +removeTrip(trip): void
+        +addRating(rating): void
+        +getAverageRating(): double
+        +verify(): void
+        +revokeVerification(): void
+        +getTotalEarnings(): double
+        +getRole(): String
+    }
+
+    class Admin extends User {
+        -adminLevel: int
+        --
+        +suspendUser(user): void
+        +activateUser(user): void
+        +blockUser(user): void
+        +verifyDriver(driver): void
+        +revokeDriverVerification(driver): void
+        +getSystemStatistics(users, trips, reservations): Map<String,Object>
+        +getRole(): String
+    }
+
+    class Vehicle {
+        -id: String
+        -brand: String
+        -model: String
+        -year: int
+        -licensePlate: String
+        -color: String
+        -type: VehicleType
+        -seats: int
+        -owner: Driver
+        -active: boolean
+        --
+        +getFullDescription(): String
+        +getShortDescription(): String
+    }
+
+    class Trip implements Refundable {
+        -id: String
+        -driver: Driver
+        -vehicle: Vehicle
+        -departureCity: String
+        -arrivalCity: String
+        -departureAddress: String
+        -arrivalAddress: String
+        -departureTime: LocalDateTime
+        -estimatedArrivalTime: LocalDateTime
+        -totalSeats: int
+        -availableSeats: int
+        -pricePerSeat: double
+        -status: TripStatus
+        -reservations: List<Reservation>
+        -description: String
+        -createdAt: LocalDateTime
+        -smokingAllowed: boolean
+        -petsAllowed: boolean
+        -luggageAllowed: boolean
+        --
+        +createTrip(): void
+        +closeTrip(): void
+        +completeTrip(): void
+        +cancelTrip(): boolean
+        +addPassenger(reservation): boolean
+        +restoreReservation(reservation): void
+        +removePassenger(reservation): boolean
+        +hasActiveReservations(): boolean
+        +canCancel(): boolean
+        +calculateRefund(hours): double
+        +calculateCompensation(): double
+        +getConfirmedReservations(): List<Reservation>
+    }
+
+    class Reservation {
+        -id: String
+        -passenger: Passenger
+        -trip: Trip
+        -seatsBooked: int
+        -totalPrice: double
+        -status: ReservationStatus
+        -payment: Payment
+        -createdAt: LocalDateTime
+        -confirmedAt: LocalDateTime
+        -cancelledAt: LocalDateTime
+        -cancellationReason: String
+        --
+        +createReservation(): void
+        +confirmReservation(): void
+        +cancelReservation(): void
+        +cancelReservation(reason): void
+        +complete(): void
+        +refundReservation(refundAmount): void
+        +calculateRefundAmount(): double
+        +getHoursUntilDeparture(): long
+        +isWithin24Hours(): boolean
+    }
+
+    class Payment {
+        -id: String
+        -reservation: Reservation
+        -paymentMethod: PaymentMethod
+        -amount: double
+        -status: PaymentStatus
+        -authorizedAt: LocalDateTime
+        -capturedAt: LocalDateTime
+        -refundedAt: LocalDateTime
+        -refundAmount: double
+        -transactionId: String
+        -errorMessage: String
+        --
+        +authorize(): boolean
+        +capture(): boolean
+        +pay(): boolean
+        +refund(amount): boolean
+        +partialRefund(amount): boolean
+        +fullRefund(): boolean
+        +getNetAmount(): double
+    }
+
+    class PaymentMethod {
+        -id: String
+        -cardNumber: String
+        -cardHolderName: String
+        -expiryDate: String
+        -cvv: String
+        -isDefault: boolean
+        -owner: Passenger
+        -cardType: String
+        --
+        +getMaskedCardNumber(): String
+        +isValid(): boolean
+        +isExpiryValid(): boolean
+        +getDisplayString(): String
+    }
+
+    class Notification {
+        -id: String
+        -recipient: User
+        -title: String
+        -message: String
+        -type: NotificationType
+        -read: boolean
+        -sentAt: LocalDateTime
+        -readAt: LocalDateTime
+        -emailSent: boolean
+        -smsSent: boolean
+        --
+        +sendSMS(): boolean
+        +sendEmail(): boolean
+        +send(): boolean
+        +markAsRead(): void
+        +markAsUnread(): void
+        +getPreview(): String
+    }
+
+    class Rating {
+        -id: String
+        -passenger: Passenger
+        -driver: Driver
+        -trip: Trip
+        -score: int
+        -comment: String
+        -createdAt: LocalDateTime
+        --
+        +rateDriver(): void
+        +isValid(): boolean
+        +getStars(): String
+    }
+}
+
+' ============================================
+' SERVICE LAYER
+' ============================================
+
+package "service" {
+    class AuthService {
+        -userRepository: UserRepository
+        -notificationService: NotificationService
+        -currentUser: User
+        --
+        +registerPassenger(...): Passenger
+        +registerDriver(...): Driver
+        +registerAdmin(...): Admin
+        +login(email, password): User
+        +logout(): void
+        +changePassword(oldPassword, newPassword): boolean
+        +resetPassword(email): boolean
+    }
+
+    class TripService {
+        -tripRepository: TripRepository
+        -reservationRepository: ReservationRepository
+        -notificationService: NotificationService
+        --
+        +createTrip(driver, vehicle, ...): Trip
+        +searchTrips(departureCity, arrivalCity, date): List<Trip>
+        +filterTrips(maxPrice, minSeats): List<Trip>
+        +closeTrip(trip): void
+        +cancelTrip(trip): boolean
+        +forceCancelTrip(trip, reservationService): void
+        +completeTrip(trip): void
+    }
+
+    class ReservationService {
+        -reservationRepository: ReservationRepository
+        -paymentService: PaymentService
+        -notificationService: NotificationService
+        --
+        +createReservation(passenger, trip, seats, paymentMethod): Reservation
+        +confirmReservation(reservation): boolean
+        +cancelReservation(reservation): boolean
+        +refundReservation(reservation): double
+        +getPendingReservations(trip): List<Reservation>
+    }
+
+    class PaymentService {
+        -paymentRepository: PaymentRepository
+        --
+        +authorizePayment(reservation, paymentMethod): Payment
+        +capturePayment(payment): boolean
+        +pay(reservation, paymentMethod): Payment
+        +refund(payment, amount): boolean
+        +fullRefund(payment): boolean
+        +getTotalRevenue(): double
+    }
+
+    class NotificationService {
+        -notificationRepository: NotificationRepository
+        --
+        +sendNotification(user, title, message, type): Notification
+        +sendSMS(user, title, message): Notification
+        +sendEmail(user, title, message): Notification
+        +sendBoth(user, title, message): Notification
+        +sendBulkNotification(users, title, message, type): List<Notification>
+        +markAllAsRead(user): void
+        +getUserNotifications(user): List<Notification>
+    }
+
+    class RatingService {
+        -ratingRepository: RatingRepository
+        -notificationService: NotificationService
+        --
+        +rateDriver(passenger, driver, trip, score, comment): Rating
+        +getDriverRatings(driver): List<Rating>
+        +getDriverAverageRating(driver): double
+        +hasPassengerRatedTrip(passenger, trip): boolean
+    }
+}
+
+' ============================================
+' REPOSITORY LAYER
+' ============================================
+
+package "repository" {
+    class UserRepository {
+        -usersById: Map<String, User>
+        -usersByEmail: Map<String, User>
+        --
+        +save(user): void
+        +findById(id): User
+        +findByEmail(email): User
+        +findAll(): List<User>
+        +findAllPassengers(): List<Passenger>
+        +findAllDrivers(): List<Driver>
+        +findAllAdmins(): List<Admin>
+        +existsByEmail(email): boolean
+        +findByStatus(status): List<User>
+        +delete(user): void
+        +update(user): void
+    }
+
+    class TripRepository {
+        -trips: Map<String, Trip>
+        --
+        +save(trip): void
+        +findById(id): Trip
+        +findAll(): List<Trip>
+        +findByDriver(driver): List<Trip>
+        +findAvailable(): List<Trip>
+        +findByStatus(status): List<Trip>
+        +search(departure, arrival, date): List<Trip>
+        +filter(maxPrice, minSeats): List<Trip>
+        +loadFromDatabase(userRepository): void
+    }
+
+    class ReservationRepository {
+        -reservations: Map<String, Reservation>
+        --
+        +save(reservation): void
+        +findById(id): Reservation
+        +findAll(): List<Reservation>
+        +findByPassenger(passenger): List<Reservation>
+        +findByTrip(trip): List<Reservation>
+        +findByStatus(status): List<Reservation>
+        +existsByPassengerAndTrip(passenger, trip): boolean
+        +loadFromDatabase(userRepository, tripRepository): void
+    }
+
+    class PaymentRepository {
+        -payments: Map<String, Payment>
+        --
+        +save(payment): void
+        +findById(id): Payment
+        +findAll(): List<Payment>
+        +findByReservation(reservation): Payment
+        +findByStatus(status): List<Payment>
+        +getTotalCaptured(): double
+    }
+
+    class NotificationRepository {
+        -notifications: Map<String, Notification>
+        --
+        +save(notification): void
+        +findById(id): Notification
+        +findAll(): List<Notification>
+        +findByUser(user): List<Notification>
+        +findUnreadByUser(user): List<Notification>
+        +countUnreadByUser(user): int
+        +markAllAsRead(user): void
+        +loadFromDatabase(userRepository): void
+    }
+
+    class RatingRepository {
+        -ratings: Map<String, Rating>
+        --
+        +save(rating): void
+        +findById(id): Rating
+        +findAll(): List<Rating>
+        +findByDriver(driver): List<Rating>
+        +findByPassengerAndTrip(passenger, trip): Rating
+        +hasRated(passenger, trip): boolean
+        +getAverageRating(driver): double
+        +loadFromDatabase(userRepository, tripRepository): void
+    }
+
+    class DatabaseConnection {
+        +{static} getConnection(): Connection
+    }
+
+    class DatabaseInitializer {
+        +{static} initialize(): void
+    }
+}
+
+' ============================================
+' EXCEPTIONS
+' ============================================
+
+package "exception" {
+    class CarpoolException
+    class AuthenticationException
+    class TripException
+    class ReservationException
+    class PaymentException
+}
+
+' ============================================
+' PRESENTATION
+' ============================================
+
+package "app" {
+    class CarpoolApp extends Application {
+        -userRepository: UserRepository
+        -tripRepository: TripRepository
+        -reservationRepository: ReservationRepository
+        -paymentRepository: PaymentRepository
+        -notificationRepository: NotificationRepository
+        -ratingRepository: RatingRepository
+        -authService: AuthService
+        -tripService: TripService
+        -reservationService: ReservationService
+        -paymentService: PaymentService
+        -notificationService: NotificationService
+        -ratingService: RatingService
+        --
+        +start(primaryStage): void
+    }
+}
+
+' ============================================
+' INHERITANCE / INTERFACE REALIZATION
+' ============================================
+
+Notifiable <|.. User
+Authenticable <|.. User
+Refundable <|.. Trip
+
+User <|-- Passenger
+Passenger <|-- Driver
+User <|-- Admin
+
+CarpoolException <|-- AuthenticationException
+CarpoolException <|-- TripException
+CarpoolException <|-- ReservationException
+CarpoolException <|-- PaymentException
+
+' ============================================
+' DOMAIN RELATIONSHIPS
+' ============================================
+
+User "1" *-- "0..*" Notification
+Passenger "1" *-- "0..*" Reservation
+Passenger "1" *-- "0..*" PaymentMethod
+Driver "1" *-- "0..*" Vehicle
+Driver "1" *-- "0..*" Trip
+Driver "1" *-- "0..*" Rating
+Trip "1" *-- "0..*" Reservation
+Reservation "1" o-- "0..1" Payment
+
+Trip "1" --> "1" Driver
+Trip "1" --> "1" Vehicle
+Reservation "1" --> "1" Passenger
+Reservation "1" --> "1" Trip
+Payment "1" --> "1" PaymentMethod
+Rating "1" --> "1" Passenger
+Rating "1" --> "1" Driver
+Rating "1" --> "1" Trip
+
+' ============================================
+' SERVICE DEPENDENCIES
+' ============================================
+
+AuthService ..> UserRepository
+AuthService ..> NotificationService
+
+TripService ..> TripRepository
+TripService ..> ReservationRepository
+TripService ..> NotificationService
+
+ReservationService ..> ReservationRepository
+ReservationService ..> PaymentService
+ReservationService ..> NotificationService
+
+PaymentService ..> PaymentRepository
+NotificationService ..> NotificationRepository
+RatingService ..> RatingRepository
+RatingService ..> NotificationService
+
+' ============================================
+' REPOSITORY / INFRASTRUCTURE DEPENDENCIES
+' ============================================
+
+UserRepository ..> DatabaseInitializer
+UserRepository ..> DatabaseConnection
+TripRepository ..> DatabaseConnection
+ReservationRepository ..> DatabaseConnection
+NotificationRepository ..> DatabaseInitializer
+NotificationRepository ..> DatabaseConnection
+RatingRepository ..> DatabaseInitializer
+RatingRepository ..> DatabaseConnection
+
+CarpoolApp ..> AuthService
+CarpoolApp ..> TripService
+CarpoolApp ..> ReservationService
+CarpoolApp ..> PaymentService
+CarpoolApp ..> NotificationService
+CarpoolApp ..> RatingService
+
+@enduml
