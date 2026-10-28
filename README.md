@@ -2,15 +2,6 @@
 
 A JavaFX desktop application for carpooling in Tunisia. It connects drivers and passengers to manage trips, bookings, and payments through a simple graphical interface.
 
-## 📑 Table of Contents
-
-- [Overview](docs/01-apercu.md)
-- [Features](docs/03-fonctionnalites.md)
-- [Architecture](docs/02-architecture.md)
-- [Installation](docs/06-installation.md)
-- [Project Structure](docs/05-structure-projet.md)
-- [Business Rules](docs/04-regles-metier.md)
-- [UML Diagram](docs/08-diagramme-uml.md)
 
 ## 🛠️ Technologies
 
